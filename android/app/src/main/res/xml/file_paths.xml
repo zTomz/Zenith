@@ -1,0 +1,4 @@
+<!-- https://pub.dev/packages/flutter_quill#-rich-text-paste:~:text=1.%20Update%20AndroidManifest,%3C/paths%3E -->
+<paths>
+    <cache-path name="cache" path="." />
+</paths>

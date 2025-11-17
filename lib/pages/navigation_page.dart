@@ -22,7 +22,7 @@ class NavigationPage extends StatelessWidget {
             label: const Text('Home'),
           ),
           FBottomNavigationBarItem(
-            icon: Icon(FIcons.layoutGrid),
+            icon: Icon(FIcons.settings),
             label: const Text('Settings'),
           ),
         ],

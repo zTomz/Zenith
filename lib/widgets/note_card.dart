@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
+import 'package:zenith/hive/boxes.dart';
 import 'package:zenith/models/note.dart';
 
 class NoteCard extends StatelessWidget {
@@ -15,31 +19,57 @@ class NoteCard extends StatelessWidget {
       color: context.theme.cardStyle.decoration.color,
       child: InkWell(
         onTap: onTap,
+        // onLongPressUp: () => controller.toggle(),
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: context.theme.cardStyle.contentStyle.padding,
           decoration: context.theme.cardStyle.decoration.copyWith(
             color: Colors.transparent,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (note.title != null) ...[
-                Text(
-                  note.title!,
-                  style: context.theme.cardStyle.contentStyle.titleTextStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 2),
-              ],
-              Text(
-                _formattedCreatedAt(note.createdAt),
-                style: context.theme.cardStyle.contentStyle.subtitleTextStyle,
+          child: Dismissible(
+            onDismissed: (_) => notesBox.delete(note.id),
+            key: ValueKey(note.id),
+            direction: DismissDirection.startToEnd,
+            background: Container(
+              alignment: Alignment.centerLeft,
+              padding: .symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: context.theme.colors.error,
+                borderRadius: BorderRadius.circular(12),
               ),
-              SizedBox(height: 4),
-              Text(note.content, maxLines: 3, overflow: TextOverflow.ellipsis),
-            ],
+              child: Icon(
+                FIcons.trash,
+                color: context.theme.colors.errorForeground,
+              ),
+            ),
+            child: Padding(
+              padding: context.theme.cardStyle.contentStyle.padding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (note.title != null) ...[
+                    Text(
+                      note.title!,
+                      style:
+                          context.theme.cardStyle.contentStyle.titleTextStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 2),
+                  ],
+                  Text(
+                    _formattedCreatedAt(note.createdAt),
+                    style:
+                        context.theme.cardStyle.contentStyle.subtitleTextStyle,
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    Document.fromJson(jsonDecode(note.content)).toPlainText(),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

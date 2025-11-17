@@ -27,16 +27,6 @@ final router = GoRouter(
               path: RouteName.home,
               name: 'home',
               builder: (context, state) => const HomePage(),
-              routes: [
-                GoRoute(
-                  path: RouteName.note,
-                  name: 'note',
-                  builder: (context, state) {
-                    final note = state.extra as Note?;
-                    return NotePage(note: note);
-                  },
-                ),
-              ],
             ),
           ],
         ),
@@ -50,6 +40,14 @@ final router = GoRouter(
           ],
         ),
       ],
+    ),
+    GoRoute(
+      path: RouteName.note,
+      name: 'note',
+      builder: (context, state) {
+        final note = state.extra as Note?;
+        return NotePage(note: note);
+      },
     ),
   ],
 );
