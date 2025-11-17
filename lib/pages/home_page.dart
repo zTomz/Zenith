@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
-import 'package:uuid/uuid.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,10 +18,9 @@ class _HomePageState extends State<HomePage> {
           Expanded(child: Text("Home Page")),
           FButton(
             onPress: () {
-              // Generate a new note ID and navigate to NotePage
-              const uuid = Uuid();
-              final noteId = uuid.v4();
-              context.push('/note?noteId=$noteId');
+              // Create a new note and navigate to NotePage
+
+              context.pushNamed('note', extra: null);
             },
             style: FButtonStyle.outline(),
             prefix: Icon(FIcons.plus),

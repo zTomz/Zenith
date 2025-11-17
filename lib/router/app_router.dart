@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:zenith/models/note.dart';
 import 'package:zenith/pages/home_page.dart';
 import 'package:zenith/pages/note_page.dart';
 import 'package:zenith/pages/navigation_page.dart';
@@ -31,8 +32,8 @@ final router = GoRouter(
                   path: RouteName.note,
                   name: 'note',
                   builder: (context, state) {
-                    final noteId = state.uri.queryParameters['noteId'];
-                    return NotePage(noteId: noteId);
+                    final note = state.extra as Note?;
+                    return NotePage(note: note);
                   },
                 ),
               ],
