@@ -2,21 +2,24 @@ import 'package:uuid/uuid.dart';
 
 class Note {
   String id;
+  String? title;
   String content;
   DateTime createdAt;
   DateTime updatedAt;
 
   Note({
     required this.id,
+    this.title,
     required this.content,
     required this.createdAt,
     required this.updatedAt,
   });
 
   // Factory constructor to create a new Note with a generated ID and current timestamps
-  factory Note.create({required String content}) {
+  factory Note.create({required String content, String? title}) {
     return Note(
       id: Uuid().v4(),
+      title: title,
       content: content,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -27,6 +30,7 @@ class Note {
   factory Note.fromMap(Map<String, dynamic> map) {
     return Note(
       id: map['id'] as String,
+      title: map['title'] as String?,
       content: map['content'] as String,
       createdAt: DateTime.parse(map['createdAt'] as String),
       updatedAt: DateTime.parse(map['updatedAt'] as String),
@@ -37,6 +41,7 @@ class Note {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'title': title,
       'content': content,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -46,12 +51,14 @@ class Note {
   // Method to create a copy of the Note with optional new values
   Note copyWith({
     String? id,
+    String? title,
     String? content,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return Note(
       id: id ?? this.id,
+      title: title ?? this.title,
       content: content ?? this.content,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -60,7 +67,7 @@ class Note {
 
   @override
   String toString() {
-    return 'Note(id: $id, content: $content, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Note(id: $id, title: $title, content: $content, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -69,6 +76,7 @@ class Note {
 
     return other is Note &&
         other.id == id &&
+        other.title == title &&
         other.content == content &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
@@ -77,6 +85,7 @@ class Note {
   @override
   int get hashCode {
     return id.hashCode ^
+        title.hashCode ^
         content.hashCode ^
         createdAt.hashCode ^
         updatedAt.hashCode;
