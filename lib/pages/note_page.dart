@@ -6,6 +6,7 @@ import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zenith/hive/boxes.dart';
 import 'package:zenith/models/note.dart';
+import 'package:zenith/services/ai_model_service.dart';
 
 class NotePage extends StatefulWidget {
   final Note? note;
@@ -108,7 +109,6 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
           FPopover(
             popoverBuilder: (context, controller) => Container(
               width: 300,
-              height: 400,
               padding: .all(8),
               child: Column(
                 spacing: 8,
@@ -119,28 +119,28 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
                       scrollDirection: .horizontal,
                       children: [
                         FButton(
-                          onPress: () {},
+                          onPress: AIModelService.instance.isDownloaded ? () {} : null,
                           style: FButtonStyle.outline(),
                           prefix: Icon(FIcons.scanText),
                           child: const Text('Summarize'),
                         ),
                         const SizedBox(width: 8),
                         FButton(
-                          onPress: () {},
+                          onPress: AIModelService.instance.isDownloaded ? () {} : null,
                           style: FButtonStyle.outline(),
                           prefix: Icon(FIcons.fileQuestionMark),
                           child: const Text('Ask'),
                         ),
                         const SizedBox(width: 8),
                         FButton(
-                          onPress: () {},
+                          onPress: AIModelService.instance.isDownloaded ? () {} : null,
                           style: FButtonStyle.outline(),
                           prefix: Icon(FIcons.wandSparkles),
                           child: const Text('Rewrite'),
                         ),
                         const SizedBox(width: 8),
                         FButton(
-                          onPress: () {},
+                          onPress: AIModelService.instance.isDownloaded ? () {} : null,
                           style: FButtonStyle.outline(),
                           prefix: Icon(FIcons.mic),
                           child: const Text('Brain Dump'),
@@ -148,12 +148,13 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
-                  FAlert(
-                    title: const Text('Heads Up!'),
-                    subtitle: const Text(
-                      'You need to download the Zenith AI local model to use AI features. Go to Settings to download it.',
+                  if (!AIModelService.instance.isDownloaded)
+                    FAlert(
+                      title: const Text('Heads Up!'),
+                      subtitle: const Text(
+                        'You need to download the Zenith AI local model to use AI features. Go to Settings to download it.',
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

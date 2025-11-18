@@ -6,9 +6,12 @@ import 'package:zenith/models/note.dart';
 import 'package:zenith/router/app_router.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:zenith/services/ai_model_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AIModelService.instance.init();
+
   await Hive.initFlutter("boxes");
   Hive.registerAdapter(NoteAdapter());
   await Hive.openBox<Note>('notes');

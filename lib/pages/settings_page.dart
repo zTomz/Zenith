@@ -1,5 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:zenith/widgets/download_ai_tile.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -12,19 +16,25 @@ class SettingsPage extends StatelessWidget {
         alignment: .topCenter,
         child: FTileGroup(
           children: [
+            DownloadAiTile(),
             FTile(
-              prefix: Icon(FIcons.brainCog),
-              title: const Text('AI Model'),
-              details: const Text('Download Zenith AI'),
-              onPress: () {},
+              prefix: Icon(FIcons.eraser),
+              title: const Text('Delete Everything'),
+              onPress: () async {
+                final appDocDir = await getApplicationDocumentsDirectory();
+
+                appDocDir
+                    .delete(recursive: true)
+                    .then((_) {
+                      log("Application documents directory deleted.");
+                    })
+                    .catchError((error) {
+                      log(
+                        "Error deleting application documents directory: $error",
+                      );
+                    });
+              },
             ),
-            // FTile(
-            //   prefix: Icon(FIcons.wifi),
-            //   title: const Text('WiFi'),
-            //   details: const Text('Forus Labs (5G)'),
-            //   suffix: Icon(FIcons.chevronRight),
-            //   onPress: () {},
-            // ),
           ],
         ),
       ),
