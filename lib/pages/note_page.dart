@@ -16,7 +16,7 @@ class NotePage extends StatefulWidget {
   State<NotePage> createState() => _NotePageState();
 }
 
-class _NotePageState extends State<NotePage> {
+class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
   late final QuillController _controller;
   late final TextEditingController _titleController;
 
@@ -98,13 +98,108 @@ class _NotePageState extends State<NotePage> {
           FHeaderAction(
             icon: Icon(FIcons.search),
             onPress: () async {
-              // TODO: Implement search button
               await showDialog<String>(
                 context: context,
                 builder: (_) =>
                     QuillToolbarSearchDialog(controller: _controller),
               );
             },
+          ),
+          FPopover(
+            popoverBuilder: (context, controller) => Container(
+              width: 300,
+              height: 400,
+              padding: .all(8),
+              child: Column(
+                spacing: 8,
+                children: [
+                  SizedBox(
+                    height: 40,
+                    child: ListView(
+                      scrollDirection: .horizontal,
+                      children: [
+                        FButton(
+                          onPress: () {},
+                          style: FButtonStyle.outline(),
+                          prefix: Icon(FIcons.scanText),
+                          child: const Text('Summarize'),
+                        ),
+                        const SizedBox(width: 8),
+                        FButton(
+                          onPress: () {},
+                          style: FButtonStyle.outline(),
+                          prefix: Icon(FIcons.fileQuestionMark),
+                          child: const Text('Ask'),
+                        ),
+                        const SizedBox(width: 8),
+                        FButton(
+                          onPress: () {},
+                          style: FButtonStyle.outline(),
+                          prefix: Icon(FIcons.wandSparkles),
+                          child: const Text('Rewrite'),
+                        ),
+                        const SizedBox(width: 8),
+                        FButton(
+                          onPress: () {},
+                          style: FButtonStyle.outline(),
+                          prefix: Icon(FIcons.mic),
+                          child: const Text('Brain Dump'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  FAlert(
+                    title: const Text('Heads Up!'),
+                    subtitle: const Text(
+                      'You need to download the Zenith AI local model to use AI features. Go to Settings to download it.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // popoverBuilder: (context, controller) => Padding(
+            //   padding: const EdgeInsets.only(
+            //     left: 20,
+            //     top: 14,
+            //     right: 20,
+            //     bottom: 10,
+            //   ),
+            //   child: SizedBox(
+            //     width: 288,
+            //     child: Column(
+            //       mainAxisSize: MainAxisSize.min,
+            //       crossAxisAlignment: CrossAxisAlignment.start,
+            //       children: [
+            //         FTileGroup(
+            //           label: const Text('Zenith AI'),
+            //           children: [
+            //             FTile(
+            //               prefix: Icon(FIcons.scanText),
+            //               title: const Text('Summarize'),
+            //               onPress: () {},
+            //             ),
+            //             FTile(
+            //               prefix: Icon(FIcons.wandSparkles),
+            //               title: const Text('Rewrite'),
+            //               onPress: () {},
+            //             ),
+            //             FTile(
+            //               prefix: Icon(FIcons.mic),
+            //               title: const Text('Brain Dump'),
+            //               onPress: () {},
+            //             ),
+            //           ],
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
+            builder: (context, controller, _) => FHeaderAction(
+              icon: Icon(FIcons.bot),
+              onPress: () async {
+                controller.toggle();
+              },
+            ),
           ),
         ],
       ),
@@ -127,7 +222,6 @@ class _NotePageState extends State<NotePage> {
               showUndo: false,
               showRedo: false,
               // showColorButton: false,
-              // TODO: Implement search button
               showSearchButton: false,
               showStrikeThrough: false,
               showSubscript: false,
