@@ -6,7 +6,7 @@ import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zenith/hive/boxes.dart';
 import 'package:zenith/models/note.dart';
-import 'package:zenith/services/ai_model_service.dart';
+import 'package:zenith/widgets/ai_popover_content.dart';
 import 'package:zenith/services/local_llm_service.dart';
 
 class NotePage extends StatefulWidget {
@@ -19,17 +19,26 @@ class NotePage extends StatefulWidget {
 }
 
 class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
+  // ========================================
+  // Controllers
+  // ========================================
   late final QuillController _controller;
   late final TextEditingController _titleController;
 
+  // ========================================
+  // AI State Management
+  // ========================================
   final _llmService = LocalLLMService();
   final ValueNotifier<String> _generatedText = ValueNotifier("");
   final ValueNotifier<bool> _isGenerating = ValueNotifier(false);
-  bool _isModelReady = false;
   final ValueNotifier<String> _statusMessage = ValueNotifier(
     "Initializing AI Model...",
   );
+  bool _isModelReady = false;
 
+  // ========================================
+  // Lifecycle Methods
+  // ========================================
   @override
   void initState() {
     super.initState();
@@ -37,15 +46,14 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
     _titleController = TextEditingController(text: widget.note?.title ?? '');
 
     if (widget.note != null) {
-      // If a note is passed, load its content into the controller.
-      // Assuming content is a JSON string.
+      // Load existing note content
       final doc = Document.fromJson(jsonDecode(widget.note!.content));
       _controller = QuillController(
         document: doc,
         selection: const TextSelection.collapsed(offset: 0),
       );
     } else {
-      // Otherwise, create a new empty controller.
+      // Create new empty note
       _controller = QuillController.basic();
     }
 
@@ -63,241 +71,189 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // ========================================
+  // Build Method
+  // ========================================
   @override
   Widget build(BuildContext context) {
     log(_generatedText.value);
 
-    return FScaffold(
-      header: FHeader.nested(
-        title: Text(widget.note != null ? "Edit Note" : "Create Note"),
-        prefixes: [
-          FHeaderAction.back(
-            onPress: () async {
-              if (_controller.document.toPlainText().trim().isEmpty &&
-                  _titleController.text.trim().isEmpty) {
-                log("Note is empty, not saving.");
+    return FScaffold(header: _buildHeader(), child: _buildBody());
+  }
 
-                if (context.mounted) {
-                  context.pop();
-                }
-                return;
-              }
+  /// Builds the header with navigation and actions
+  FHeader _buildHeader() {
+    return FHeader.nested(
+      title: Text(widget.note != null ? "Edit Note" : "Create Note"),
+      prefixes: [FHeaderAction.back(onPress: _handleBackAction)],
+      suffixes: [_buildSearchAction(), _buildAiPopover()],
+    );
+  }
 
-              Note note;
+  /// Builds the search action button
+  FHeaderAction _buildSearchAction() {
+    return FHeaderAction(
+      icon: Icon(FIcons.search),
+      onPress: () async {
+        await showDialog<String>(
+          context: context,
+          builder: (_) => QuillToolbarSearchDialog(controller: _controller),
+        );
+      },
+    );
+  }
 
-              if (widget.note != null) {
-                // Update existing note
-                note = widget.note!;
-                note.title = _titleController.text.trim().isEmpty
-                    ? null
-                    : _titleController.text.trim();
-                note.content = jsonEncode(
-                  _controller.document.toDelta().toJson(),
-                );
-              } else {
-                // Create new note
-                note = .create(
-                  title: _titleController.text.trim().isEmpty
-                      ? null
-                      : _titleController.text.trim(),
-                  content: jsonEncode(_controller.document.toDelta().toJson()),
-                );
-              }
-
-              await notesBox.put(note.id, note);
-
-              if (context.mounted) {
-                context.pop();
-              }
-            },
-          ),
-        ],
-        suffixes: [
-          FHeaderAction(
-            icon: Icon(FIcons.search),
-            onPress: () async {
-              await showDialog<String>(
-                context: context,
-                builder: (_) =>
-                    QuillToolbarSearchDialog(controller: _controller),
-              );
-            },
-          ),
-          FPopover(
-            popoverBuilder: (context, controller) => ValueListenableBuilder(
-              valueListenable: _generatedText,
-              builder: (context, generatedText, _) => ValueListenableBuilder(
-                valueListenable: _isGenerating,
-                builder: (context, isGenerating, _) => ValueListenableBuilder(
-                  valueListenable: _statusMessage,
-                  builder: (context, statusMessage, _) => Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.8,
-                      maxHeight: MediaQuery.of(context).size.height * 0.5,
-                    ),
-                    width: 400,
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 8,
-                      children: [
-                        SizedBox(
-                          height: 40,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              FButton(
-                                onPress: AIModelService.instance.isDownloaded
-                                    ? () => _runAiTask(
-                                        _llmService.streamSummarize,
-                                      )
-                                    : null,
-                                style: FButtonStyle.outline(),
-                                prefix: Icon(FIcons.scanText),
-                                child: const Text('Summarize'),
-                              ),
-                              const SizedBox(width: 8),
-                              FButton(
-                                onPress: AIModelService.instance.isDownloaded
-                                    ? _showAskDialog
-                                    : null,
-                                style: FButtonStyle.outline(),
-                                prefix: Icon(FIcons.fileQuestionMark),
-                                child: const Text('Ask'),
-                              ),
-                              const SizedBox(width: 8),
-                              FButton(
-                                onPress: AIModelService.instance.isDownloaded
-                                    ? () => _runAiTask(
-                                        (text) =>
-                                            _llmService.streamRewrite(text),
-                                      )
-                                    : null,
-                                style: FButtonStyle.outline(),
-                                prefix: Icon(FIcons.wandSparkles),
-                                child: const Text('Rewrite'),
-                              ),
-                              const SizedBox(width: 8),
-                              FButton(
-                                onPress: AIModelService.instance.isDownloaded
-                                    ? () => _runAiTask(
-                                        _llmService.streamBrainDump,
-                                      )
-                                    : null,
-                                style: FButtonStyle.outline(),
-                                prefix: Icon(FIcons.mic),
-                                child: const Text('Brain Dump'),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (isGenerating)
-                          Row(
-                            children: [
-                              const SizedBox(width: 8),
-                              FCircularProgress.loader(),
-                              const SizedBox(width: 8),
-                              Text(statusMessage),
-                            ],
-                          ),
-                        if (!AIModelService.instance.isDownloaded)
-                          FAlert(
-                            title: const Text('Heads Up!'),
-                            subtitle: const Text(
-                              'You need to download the Zenith AI local model to use AI features. Go to Settings to download it.',
-                            ),
-                          ),
-
-                        if (generatedText.isNotEmpty)
-                          SizedBox(
-                            width: double.infinity,
-                            child: FCard(
-                              title: const Text('AI Result'),
-                              child: Text(generatedText),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            builder: (context, controller, _) => FHeaderAction(
-              icon: Icon(FIcons.bot),
-              onPress: () async {
-                controller.toggle();
-              },
+  /// Builds the AI popover with all AI features
+  Widget _buildAiPopover() {
+    return FPopover(
+      popoverBuilder: (context, controller) => ValueListenableBuilder(
+        valueListenable: _generatedText,
+        builder: (context, generatedText, _) => ValueListenableBuilder(
+          valueListenable: _isGenerating,
+          builder: (context, isGenerating, _) => ValueListenableBuilder(
+            valueListenable: _statusMessage,
+            builder: (context, statusMessage, _) => AiPopoverContent(
+              llmService: _llmService,
+              generatedText: generatedText,
+              isGenerating: isGenerating,
+              statusMessage: statusMessage,
+              onSummarize: () => _runAiTask(_llmService.streamSummarize),
+              onAsk: _showAskDialog,
+              onRewrite: () =>
+                  _runAiTask((text) => _llmService.streamRewrite(text)),
+              onBrainDump: () => _runAiTask(_llmService.streamBrainDump),
+              onGenerateTitle: _generateTitle,
             ),
           ),
-        ],
+        ),
       ),
-      child: Column(
-        children: [
-          QuillSimpleToolbar(
-            controller: _controller,
-            // TODO: Maybe make them configurable in the settings
-            config: const QuillSimpleToolbarConfig(
-              multiRowsDisplay: false,
-              showFontSize: false,
-              showFontFamily: false,
-              showBackgroundColorButton: false,
-              showCodeBlock: false,
-              showInlineCode: false,
-              showAlignmentButtons: false,
-              showCenterAlignment: false,
-              showQuote: false,
-              showIndent: false,
-              showUndo: false,
-              showRedo: false,
-              // showColorButton: false,
-              showSearchButton: false,
-              showStrikeThrough: false,
-              showSubscript: false,
-              showSuperscript: false,
-              showClearFormat: false,
-              showItalicButton: false,
-              showUnderLineButton: false,
-            ),
-          ),
-          Material(
-            child: TextField(
-              controller: _titleController,
-              style: context.theme.cardStyle.contentStyle.titleTextStyle,
-              decoration: InputDecoration.collapsed(
-                hintText: 'Title',
-                border: InputBorder.none,
-                hintStyle: context.theme.cardStyle.contentStyle.titleTextStyle
-                    .copyWith(
-                      color: context.theme.textFieldStyle.hintTextStyle.resolve(
-                        {WidgetState.hovered},
-                      ).color,
-                    ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: QuillEditor.basic(
-              controller: _controller,
-              config: const QuillEditorConfig(),
-            ),
-          ),
-        ],
+      builder: (context, controller, _) =>
+          FHeaderAction(icon: Icon(FIcons.bot), onPress: controller.toggle),
+    );
+  }
+
+  /// Builds the main body with toolbar and editor
+  Widget _buildBody() {
+    return Column(
+      children: [
+        _buildToolbar(),
+        _buildTitleField(),
+        const SizedBox(height: 8),
+        _buildEditor(),
+      ],
+    );
+  }
+
+  /// Builds the Quill toolbar
+  Widget _buildToolbar() {
+    return QuillSimpleToolbar(
+      controller: _controller,
+      config: const QuillSimpleToolbarConfig(
+        multiRowsDisplay: false,
+        showFontSize: false,
+        showFontFamily: false,
+        showBackgroundColorButton: false,
+        showCodeBlock: false,
+        showInlineCode: false,
+        showAlignmentButtons: false,
+        showCenterAlignment: false,
+        showQuote: false,
+        showIndent: false,
+        showUndo: false,
+        showRedo: false,
+        showSearchButton: false,
+        showStrikeThrough: false,
+        showSubscript: false,
+        showSuperscript: false,
+        showClearFormat: false,
+        showItalicButton: false,
+        showUnderLineButton: false,
       ),
     );
   }
 
+  /// Builds the title text field
+  Widget _buildTitleField() {
+    return Material(
+      child: TextField(
+        controller: _titleController,
+        style: context.theme.cardStyle.contentStyle.titleTextStyle,
+        decoration: InputDecoration.collapsed(
+          hintText: 'Title',
+          border: InputBorder.none,
+          hintStyle: context.theme.cardStyle.contentStyle.titleTextStyle
+              .copyWith(
+                color: context.theme.textFieldStyle.hintTextStyle.resolve({
+                  WidgetState.hovered,
+                }).color,
+              ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the Quill editor
+  Widget _buildEditor() {
+    return Expanded(
+      child: QuillEditor.basic(
+        controller: _controller,
+        config: const QuillEditorConfig(),
+      ),
+    );
+  }
+
+  // ========================================
+  // Note Management Methods
+  // ========================================
+
+  /// Handles the back button action - saves the note if not empty
+  Future<void> _handleBackAction() async {
+    if (_controller.document.toPlainText().trim().isEmpty &&
+        _titleController.text.trim().isEmpty) {
+      log("Note is empty, not saving.");
+      if (context.mounted) context.pop();
+      return;
+    }
+
+    Note note;
+
+    if (widget.note != null) {
+      // Update existing note
+      note = widget.note!;
+      note.title = _titleController.text.trim().isEmpty
+          ? null
+          : _titleController.text.trim();
+      note.content = jsonEncode(_controller.document.toDelta().toJson());
+    } else {
+      // Create new note
+      note = Note.create(
+        title: _titleController.text.trim().isEmpty
+            ? null
+            : _titleController.text.trim(),
+        content: jsonEncode(_controller.document.toDelta().toJson()),
+      );
+    }
+
+    await notesBox.put(note.id, note);
+
+    if (context.mounted) context.pop();
+  }
+
+  // ========================================
+  // AI Methods
+  // ========================================
+
+  /// Initializes the AI model
   Future<void> _initModel() async {
     try {
       await _llmService.loadModel();
       if (mounted) setState(() => _isModelReady = true);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Fehler: $e")));
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
@@ -308,7 +264,7 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
 
     setState(() {
       _isGenerating.value = true;
-      _generatedText.value = ""; // Clear previous result
+      _generatedText.value = "";
       _statusMessage.value = "Thinking...";
     });
 
@@ -341,16 +297,7 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
     );
   }
 
-  /// Helper method to copy generated text to clipboard
-  // void _copyToClipboard() {
-  //   if (_generatedText.isNotEmpty) {
-  //     Clipboard.setData(ClipboardData(text: _generatedText));
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text("Copied result to clipboard")),
-  //     );
-  //   }
-  // }
-
+  /// Shows a dialog to ask the AI a question about the note
   Future<void> _showAskDialog() async {
     final questionController = TextEditingController();
     final question = await showDialog<String>(
@@ -388,5 +335,56 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
         (content) => _llmService.streamAsk(question, context: content),
       );
     }
+  }
+
+  /// Generates a title for the note based on its content
+  void _generateTitle() {
+    // Prevent running if already busy or model not ready
+    if (_isGenerating.value || !_isModelReady) return;
+
+    final noteContent = _controller.document.toPlainText().trim();
+    if (noteContent.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Note content is empty")));
+      return;
+    }
+
+    setState(() {
+      _isGenerating.value = true;
+      _statusMessage.value = "Generating title...";
+    });
+
+    // Clear the current generated text (not showing it for title generation)
+    String generatedTitle = "";
+
+    // Start the stream
+    _llmService
+        .streamGenerateTitle(noteContent)
+        .listen(
+          (token) {
+            if (mounted) {
+              generatedTitle += token;
+            }
+          },
+          onDone: () {
+            if (mounted) {
+              setState(() {
+                // Set the generated title in the title field
+                _titleController.text = generatedTitle.trim();
+                _isGenerating.value = false;
+                _statusMessage.value = "Title generated";
+              });
+            }
+          },
+          onError: (e) {
+            if (mounted) {
+              setState(() {
+                _statusMessage.value = "Error: $e";
+                _isGenerating.value = false;
+              });
+            }
+          },
+        );
   }
 }

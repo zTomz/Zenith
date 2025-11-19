@@ -79,6 +79,16 @@ class LocalLLMService {
     return _generateStream(systemPrompt, chaoticText);
   }
 
+  Stream<String> streamGenerateTitle(String noteContent) {
+    const systemPrompt =
+        "You are a title generation expert. "
+        "Read the user's note content and generate a concise, descriptive title. "
+        "The title should be 3-7 words maximum, capture the main topic or purpose, "
+        "and be clear and direct. Do not use quotes, prefixes like 'Title:', or any special formatting. "
+        "Just output the title text itself.";
+    return _generateStream(systemPrompt, noteContent);
+  }
+
   // ===========================================================================
   // INTERNAL HELPER
   // ===========================================================================
