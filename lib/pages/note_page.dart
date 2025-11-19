@@ -76,8 +76,6 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
   // ========================================
   @override
   Widget build(BuildContext context) {
-    log(_generatedText.value);
-
     return FScaffold(header: _buildHeader(), child: _buildBody());
   }
 
