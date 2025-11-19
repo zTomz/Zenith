@@ -47,6 +47,7 @@ dependencies:
 
   # AI
   dio: ^5.9.0
+  llama_flutter_android: ^0.1.1
 
 dev_dependencies:
   flutter_test:

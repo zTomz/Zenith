@@ -117,6 +117,9 @@ class _DownloadAiTileState extends State<DownloadAiTile> {
         debugPrint("Download canceled by user");
       } else {
         debugPrint("Download error: $e");
+        if (mounted) {
+          _showErrorDialog(context, e);
+        }
       }
 
       // Cleanup: Delete corrupted file
@@ -194,5 +197,52 @@ class _DownloadAiTileState extends State<DownloadAiTile> {
     } catch (e) {
       debugPrint("Error deleting file: $e");
     }
+  }
+
+  Future<void> _showErrorDialog(BuildContext context, Object error) async {
+    debugPrint('Error type: ${error.runtimeType}');
+    if (error is DioException) {
+      debugPrint('DioException type: ${error.type}');
+      debugPrint('Inner error: ${error.error}');
+    }
+
+    final isConnectionError =
+        error is DioException &&
+        (error.type == DioExceptionType.connectionError ||
+            error.error is SocketException);
+
+    final message = isConnectionError
+        ? 'Failed to connect to the server. Please check your internet connection.'
+        : 'An unexpected error occurred during download.';
+
+    showFDialog(
+      routeStyle: context.theme.dialogRouteStyle
+          .copyWith(
+            barrierFilter: (animation) => ImageFilter.compose(
+              outer: ImageFilter.blur(
+                sigmaX: animation * 5,
+                sigmaY: animation * 5,
+              ),
+              inner: ColorFilter.mode(
+                context.theme.colors.barrier,
+                BlendMode.srcOver,
+              ),
+            ),
+          )
+          .call,
+      context: context,
+      builder: (context, style, animation) => FDialog(
+        animation: animation,
+        title: const Text('Download Failed'),
+        body: Text(message),
+        actions: [
+          FButton(
+            style: FButtonStyle.primary(),
+            onPress: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }
