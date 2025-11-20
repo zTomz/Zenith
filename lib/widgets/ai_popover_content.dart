@@ -7,6 +7,7 @@ import 'package:zenith/services/local_llm_service.dart';
 /// Content widget for the AI popover
 class AiPopoverContent extends StatelessWidget {
   final LocalLLMService llmService;
+  final bool isModelLoaded;
   final String generatedText;
   final bool isGenerating;
   final String statusMessage;
@@ -19,6 +20,7 @@ class AiPopoverContent extends StatelessWidget {
   const AiPopoverContent({
     super.key,
     required this.llmService,
+    required this.isModelLoaded,
     required this.generatedText,
     required this.isGenerating,
     required this.statusMessage,
@@ -51,6 +53,7 @@ class AiPopoverContent extends StatelessWidget {
             onRewrite: onRewrite,
             onBrainDump: onBrainDump,
             onGenerateTitle: onGenerateTitle,
+            isEnabled: isModelLoaded,
           ),
 
           // Loading indicator
@@ -70,6 +73,13 @@ class AiPopoverContent extends StatelessWidget {
               title: const Text('Heads Up!'),
               subtitle: const Text(
                 'You need to download the Zenith AI local model to use AI features. Go to Settings to download it.',
+              ),
+            )
+          else if (!isModelLoaded)
+            FAlert(
+              title: const Text('Model Loading...'),
+              subtitle: const Text(
+                'Please wait while the AI model initializes. This may take a moment.',
               ),
             ),
 

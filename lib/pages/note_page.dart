@@ -35,6 +35,9 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
     "Initializing AI Model...",
   );
   bool _isModelReady = false;
+  late final FPopoverController _popoverController = FPopoverController(
+    vsync: this,
+  );
 
   // ========================================
   // Lifecycle Methods
@@ -58,6 +61,7 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
     }
 
     _initModel();
+    _popoverController.addListener(() => setState(() {}));
   }
 
   @override
@@ -68,6 +72,7 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
     _generatedText.dispose();
     _isGenerating.dispose();
     _statusMessage.dispose();
+    _popoverController.dispose();
     super.dispose();
   }
 
@@ -104,6 +109,8 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
   /// Builds the AI popover with all AI features
   Widget _buildAiPopover() {
     return FPopover(
+      controller: _popoverController,
+      hideRegion: .none,
       popoverBuilder: (context, controller) => ValueListenableBuilder(
         valueListenable: _generatedText,
         builder: (context, generatedText, _) => ValueListenableBuilder(
@@ -112,6 +119,7 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
             valueListenable: _statusMessage,
             builder: (context, statusMessage, _) => AiPopoverContent(
               llmService: _llmService,
+              isModelLoaded: _isModelReady,
               generatedText: generatedText,
               isGenerating: isGenerating,
               statusMessage: statusMessage,
@@ -125,8 +133,17 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
           ),
         ),
       ),
-      builder: (context, controller, _) =>
-          FHeaderAction(icon: Icon(FIcons.bot), onPress: controller.toggle),
+      builder: (context, controller, _) => FHeaderAction(
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child:
+              (_popoverController.status == AnimationStatus.completed ||
+                  _popoverController.status == AnimationStatus.forward)
+              ? Icon(FIcons.x, key: const ValueKey('close'))
+              : Icon(FIcons.bot, key: const ValueKey('bot')),
+        ),
+        onPress: controller.toggle,
+      ),
     );
   }
 
@@ -245,13 +262,22 @@ class _NotePageState extends State<NotePage> with TickerProviderStateMixin {
   Future<void> _initModel() async {
     try {
       await _llmService.loadModel();
-      if (mounted) setState(() => _isModelReady = true);
+      if (mounted) {
+        setState(() => _isModelReady = true);
+        showFToast(
+          context: context,
+          title: const Text('AI Model Loaded'),
+          icon: Icon(FIcons.check, color: Colors.green),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      showFToast(
+        context: context,
+        title: const Text('Error loading model'),
+        icon: const Icon(FIcons.triangleAlert),
+      );
     }
   }
 

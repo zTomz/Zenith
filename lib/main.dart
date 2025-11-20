@@ -37,8 +37,11 @@ class Application extends StatelessWidget {
         FlutterQuillLocalizations.delegate,
       ],
       theme: theme.toApproximateMaterialTheme(),
-      builder: (_, child) => FAnimatedTheme(data: theme, child: child!),
       routerConfig: router,
+      builder: (_, child) => FAnimatedTheme(
+        data: theme,
+        child: FToaster(child: child!),
+      ),
     );
   }
 }

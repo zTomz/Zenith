@@ -11,6 +11,7 @@ class AiActionButtons extends StatelessWidget {
   final VoidCallback onRewrite;
   final VoidCallback onBrainDump;
   final VoidCallback onGenerateTitle;
+  final bool isEnabled;
 
   const AiActionButtons({
     super.key,
@@ -20,53 +21,55 @@ class AiActionButtons extends StatelessWidget {
     required this.onRewrite,
     required this.onBrainDump,
     required this.onGenerateTitle,
+    this.isEnabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final isModelDownloaded = AIModelService.instance.isDownloaded;
 
-    return SizedBox(
-      height: 40,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          FButton(
-            onPress: isModelDownloaded ? onSummarize : null,
-            style: FButtonStyle.outline(),
-            prefix: Icon(FIcons.scanText),
-            child: const Text('Summarize'),
-          ),
-          const SizedBox(width: 8),
-          FButton(
-            onPress: isModelDownloaded ? onAsk : null,
-            style: FButtonStyle.outline(),
-            prefix: Icon(FIcons.fileQuestionMark),
-            child: const Text('Ask'),
-          ),
-          const SizedBox(width: 8),
-          FButton(
-            onPress: isModelDownloaded ? onRewrite : null,
-            style: FButtonStyle.outline(),
-            prefix: Icon(FIcons.wandSparkles),
-            child: const Text('Rewrite'),
-          ),
-          const SizedBox(width: 8),
-          FButton(
-            onPress: isModelDownloaded ? onBrainDump : null,
-            style: FButtonStyle.outline(),
-            prefix: Icon(FIcons.mic),
-            child: const Text('Brain Dump'),
-          ),
-          const SizedBox(width: 8),
-          FButton(
-            onPress: isModelDownloaded ? onGenerateTitle : null,
-            style: FButtonStyle.outline(),
-            prefix: Icon(FIcons.sparkles),
-            child: const Text('Generate Title'),
-          ),
-        ],
-      ),
+    return Wrap(
+      direction: .horizontal,
+      alignment: .start,
+      runSpacing: 8,
+      spacing: 8,
+      children: [
+        FButton(
+          onPress: isModelDownloaded && isEnabled ? onSummarize : null,
+          mainAxisSize: .min,
+          style: FButtonStyle.outline(),
+          prefix: Icon(FIcons.scanText),
+          child: const Text('Summarize'),
+        ),
+        FButton(
+          onPress: isModelDownloaded && isEnabled ? onAsk : null,
+          mainAxisSize: .min,
+          style: FButtonStyle.outline(),
+          prefix: Icon(FIcons.fileQuestionMark),
+          child: const Text('Ask'),
+        ),
+        FButton(
+          onPress: isModelDownloaded && isEnabled ? onRewrite : null,
+          mainAxisSize: .min,
+          style: FButtonStyle.outline(),
+          prefix: Icon(FIcons.wandSparkles),
+          child: const Text('Rewrite'),
+        ),
+        FButton(
+          onPress: isModelDownloaded && isEnabled ? onBrainDump : null,
+          mainAxisSize: .min,
+          style: FButtonStyle.outline(),
+          prefix: Icon(FIcons.mic),
+          child: const Text('Brain Dump'),
+        ),
+        FButton(
+          onPress: isModelDownloaded && isEnabled ? onGenerateTitle : null,
+          mainAxisSize: .min,
+          style: FButtonStyle.outline(),
+          prefix: Icon(FIcons.sparkles),
+          child: const Text('Generate Title'),
+        ),
+      ],
     );
   }
 }
