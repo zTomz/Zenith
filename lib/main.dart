@@ -7,6 +7,7 @@ import 'package:zenith/router/app_router.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:zenith/services/ai_model_service.dart';
+import 'package:zenith/services/settings_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,8 @@ void main() async {
   Hive.registerAdapter(NoteAdapter());
   await Hive.openBox<Note>('notes');
 
+  await SettingsService.instance.init();
+
   runApp(const Application());
 }
 
@@ -24,24 +27,43 @@ class Application extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FThemes.zinc.dark;
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: SettingsService.instance.themeMode,
+      builder: (context, themeMode, child) {
+        FThemeData theme;
+        switch (themeMode) {
+          case ThemeMode.light:
+            theme = FThemes.zinc.light;
+            break;
+          case ThemeMode.dark:
+            theme = FThemes.zinc.dark;
+            break;
+          case ThemeMode.system:
+            final brightness = MediaQuery.platformBrightnessOf(context);
+            theme = brightness == Brightness.dark
+                ? FThemes.zinc.dark
+                : FThemes.zinc.light;
+            break;
+        }
 
-    return MaterialApp.router(
-      // TODO: replace with your application's supported locales.
-      supportedLocales: FLocalizations.supportedLocales,
-      // TODO: add your application's localizations delegates.
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        FlutterQuillLocalizations.delegate,
-      ],
-      theme: theme.toApproximateMaterialTheme(),
-      routerConfig: router,
-      builder: (_, child) => FAnimatedTheme(
-        data: theme,
-        child: FToaster(child: child!),
-      ),
+        return MaterialApp.router(
+          // TODO: replace with your application's supported locales.
+          supportedLocales: FLocalizations.supportedLocales,
+          // TODO: add your application's localizations delegates.
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            FlutterQuillLocalizations.delegate,
+          ],
+          theme: theme.toApproximateMaterialTheme(),
+          routerConfig: router,
+          builder: (_, child) => FAnimatedTheme(
+            data: theme,
+            child: FToaster(child: child!),
+          ),
+        );
+      },
     );
   }
 }
